@@ -33,7 +33,7 @@ class CampusDataMonitor:
 
         return data
 
-    def get_date_delta_data(self, place_name, end_date, hours):
+    def get_relative_date_data(self, place_name, end_date, hours):
         start_date = end_date - datetime.timedelta(hours=hours)
         data = self.get_date_data(place_name, start_date, end_date)
 
@@ -55,4 +55,4 @@ if __name__ == '__main__':
     cdm = CampusDataMonitor()
     cdm.get_date_data(place)
 
-    cdm.get_date_delta_data(place, datetime.datetime.now(), 12)
+    cdm.get_relative_date_data(place, datetime.datetime.now(), 12)
