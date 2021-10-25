@@ -1,9 +1,12 @@
+import grequests
 import requests
 import json
 import pprint
+import time
 import datetime
 import sqlite3
 import matplotlib.pyplot as plt
+
 
 
 class CampusDataMonitor:
@@ -31,11 +34,27 @@ class CampusDataMonitor:
     """
 
     url_template = None
+    location_names = {}  # location: group
 
-    def __init__(self, url_path='./config/ncku_api_url.txt'):
-        with open('./config/ncku_api_url.txt') as fr:
+    def __init__(self, url_path='./config/ncku_api_url.txt',
+                 location_names_path='./config/ogwebbasesetting_ogattlistctrl_ascx_211021.csv'):
+        with open('./config/ncku_api_url.txt', 'r') as fr:
             self.url_template = fr.read()
 
+        with open(location_names_path, 'r', encoding='utf8') as fr:
+            location_name_lines = fr.read().split('\n')[1:]
+
+        i = 0
+        for line in location_name_lines:
+            # i += 1
+            # if i > 10:
+            #     break
+            if line == '':
+                continue
+            line = line.split(',')
+            self.location_names[line[0]] = line[1]
+
+        print('locations count:', len(self.location_names.keys()))
         # self.conn = sqlite3.connect(':memory:')
         # self.c = self.conn.cursor()
 
@@ -72,6 +91,39 @@ class CampusDataMonitor:
         #     json.dump(data, fw, indent=4)
 
         return data
+
+    def get_date_datas_fast(self, place_names, start_date=datetime.date.today(), end_date=datetime.date.today()):
+        # url_config = {
+        #     # 'place': place_name,
+        #     'startdate': start_date.strftime('%Y-%m-%d %H:%M:%S'),
+        #     'enddate': end_date.strftime('%Y-%m-%d %H:%M:%S')
+        # }
+        urls = []
+        res_list = []
+        for place_name in place_names:
+            url_config = {
+                'place': place_name,
+                'startdate': start_date.strftime('%Y-%m-%d %H:%M:%S'),
+                'enddate': end_date.strftime('%Y-%m-%d %H:%M:%S')
+            }
+            url = eval(f"f'{self.url_template}'", url_config)
+            urls.append(url)
+            res_list.append(grequests.get(url))
+
+        res_list = grequests.map(res_list)
+        # print(res_list)
+        datas = []
+        for rs in res_list:
+            data = eval(rs.content)
+            datas.append(data)
+
+        return datas, res_list
+
+    def get_relative_date_datas_fast(self, place_names, end_date, hours):
+        start_date = end_date - datetime.timedelta(hours=hours)
+        datas, res_list = self.get_date_datas_fast(place_names, start_date, end_date)
+
+        return datas, res_list
 
     @staticmethod
     def time_interval_index(times, t_time):
@@ -166,5 +218,23 @@ if __name__ == '__main__':
     ts_names = []
     for t in ts:
         ts_names.append(t.strftime('%H:%M'))
-    pprint.pp(list(zip(ts_names, gs)))
-    cdm.plot_animate(place)
+    # pprint.pp(list(zip(ts_names, gs)))
+    # cdm.plot_animate(place)
+
+    t = time.time()
+    rdata, rres_list = cdm.get_relative_date_datas_fast(list(cdm.location_names.keys()), datetime.datetime.now(), 12)
+    success = 0
+    fail = 0
+    for rres in rres_list:
+        if rres.status_code == 200:
+            success += 1
+        else:
+            fail += 1
+
+    print(f'success: {success}, failed: {fail}')
+    print(len(rdata))
+    print('time cost:', time.time()-t, '(s)')
+    rsum = []
+    for rd in rdata:
+        rsum.append(len(rd))
+    pprint.pprint(list(zip(list(cdm.location_names.keys()), rsum)))
