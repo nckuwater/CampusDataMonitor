@@ -8,7 +8,6 @@ import sqlite3
 import matplotlib.pyplot as plt
 
 
-
 class CampusDataMonitor:
     """
         "EmpNo": "學號",
@@ -114,7 +113,11 @@ class CampusDataMonitor:
         # print(res_list)
         datas = []
         for rs in res_list:
-            data = eval(rs.content)
+            if rs is not None:
+                data = eval(rs.content)
+            else:
+                print('request got none')
+                data = []
             datas.append(data)
 
         return datas, res_list
@@ -195,7 +198,7 @@ class CampusDataMonitor:
             plt.plot(ts_names, gs)
             for i, j in zip(ts_names, gs):
                 if j != 0:
-                    plt.annotate(str(j), xy=(i, j+0.5))
+                    plt.annotate(str(j), xy=(i, j + 0.5))
             plt.draw()
             plt.suptitle(f'{place} 門禁刷卡統計')
             plt.title(datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
@@ -233,7 +236,7 @@ if __name__ == '__main__':
 
     print(f'success: {success}, failed: {fail}')
     print(len(rdata))
-    print('time cost:', time.time()-t, '(s)')
+    print('time cost:', time.time() - t, '(s)')
     rsum = []
     for rd in rdata:
         rsum.append(len(rd))
