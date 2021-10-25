@@ -3,6 +3,7 @@ import json
 import pprint
 import datetime
 import sqlite3
+import matplotlib.pyplot as plt
 
 
 class CampusDataMonitor:
@@ -49,10 +50,10 @@ class CampusDataMonitor:
         res = requests.get(url)
         data = eval(res.content)
 
-        # for debugging
-        with open(f"./data/{url_config['place']}_{url_config['startdate']}_{url_config['enddate']}.json".replace(
-                ':', '-'), 'w') as fw:
-            json.dump(data, fw, indent=4)
+        # # for debugging
+        # with open(f"./data/{url_config['place']}_{url_config['startdate']}_{url_config['enddate']}.json".replace(
+        #         ':', '-'), 'w') as fw:
+        #     json.dump(data, fw, indent=4)
 
         return data
 
@@ -60,15 +61,15 @@ class CampusDataMonitor:
         start_date = end_date - datetime.timedelta(hours=hours)
         data = self.get_date_data(place_name, start_date, end_date)
 
-        # for debugging
-        url_config = {
-            'place': place_name,
-            'startdate': start_date.strftime('%Y-%m-%d %H:%M:%S'),
-            'enddate': end_date.strftime('%Y-%m-%d %H:%M:%S')
-        }
-        with open(f"./data/delta_{url_config['place']}_{url_config['startdate']}_{url_config['enddate']}.json".replace(
-                ':', '-'), 'w') as fw:
-            json.dump(data, fw, indent=4)
+        # # for debugging
+        # url_config = {
+        #     'place': place_name,
+        #     'startdate': start_date.strftime('%Y-%m-%d %H:%M:%S'),
+        #     'enddate': end_date.strftime('%Y-%m-%d %H:%M:%S')
+        # }
+        # with open(f"./data/delta_{url_config['place']}_{url_config['startdate']}_{url_config['enddate']}.json".replace(
+        #         ':', '-'), 'w') as fw:
+        #     json.dump(data, fw, indent=4)
 
         return data
 
@@ -80,6 +81,11 @@ class CampusDataMonitor:
         return len(times) - 1
 
     def divide_data_into_timegroups(self, data, start_time, interval=60, end_time=None):
+        """
+            Divide data into timegroups by given start_time, interval, end_time
+            times = [start_time, start_time+1*interval,..., start_time+n*interval]
+            start_time+n*interval >= end_time
+        """
         if end_time is None:
             end_time = datetime.datetime.combine(datetime.date.today(), datetime.time()) + datetime.timedelta(days=1)
 
@@ -120,6 +126,32 @@ class CampusDataMonitor:
 
         return groups, group_sums, times
 
+    def plot_animate(self, place):
+        plt.ion()
+        plt.rcParams['font.sans-serif'] = ['Microsoft JhengHei']
+        plt.rcParams['axes.unicode_minus'] = False
+        while True:
+            print('loop')
+            rdata = self.get_relative_date_data(place, datetime.datetime.now(), 12)
+            g, gs, ts = self.divide_data_into_timegroups(rdata, datetime.date.today())
+
+            gs = gs[:-1]
+            ts = ts[:-1]
+            ts_names = []
+            for t in ts:
+                ts_names.append(t.strftime('%H:%M'))
+            plt.plot(ts_names, gs)
+            for i, j in zip(ts_names, gs):
+                if j != 0:
+                    plt.annotate(str(j), xy=(i, j+0.5))
+            plt.draw()
+            plt.suptitle(f'{place} 門禁刷卡統計')
+            plt.title(datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
+            plt.xlabel('時段')
+            plt.ylabel('刷卡人數')
+            plt.pause(1)
+            plt.clf()
+
 
 if __name__ == '__main__':
     place = '計網中心_1F自動門_進'
@@ -128,4 +160,11 @@ if __name__ == '__main__':
 
     rdata = cdm.get_relative_date_data(place, datetime.datetime.now(), 12)
     g, gs, ts = cdm.divide_data_into_timegroups(rdata, datetime.date.today())
-    pprint.pp(list(zip(ts, gs)))
+
+    gs = gs[:-1]
+    ts = ts[:-1]
+    ts_names = []
+    for t in ts:
+        ts_names.append(t.strftime('%H:%M'))
+    pprint.pp(list(zip(ts_names, gs)))
+    cdm.plot_animate(place)
