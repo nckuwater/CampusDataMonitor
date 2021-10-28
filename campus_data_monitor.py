@@ -6,6 +6,30 @@ import time
 import datetime
 import sqlite3
 import matplotlib.pyplot as plt
+import concurrent.futures
+
+
+class ThreadRequest:
+    def load_url(self, url, timeout):
+        return requests.get(url, timeout=timeout)
+
+    def get_urls(self, urls):
+        datas = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+            resp_err = 0
+            resp_ok = 0
+            future_to_url = {executor.submit(self.load_url, url, 10): url for url in urls}
+            for future in concurrent.futures.as_completed(future_to_url):
+                url = future_to_url[future]
+                # print(url)
+                try:
+                    data = future.result()
+                    datas.append(data)
+                except Exception as exc:
+                    resp_err = resp_err + 1
+                else:
+                    resp_ok = resp_ok + 1
+        return datas
 
 
 class CampusDataMonitor:
@@ -109,7 +133,9 @@ class CampusDataMonitor:
             urls.append(url)
             res_list.append(grequests.get(url))
 
-        res_list = grequests.map(res_list)
+        # res_list = grequests.map(res_list)
+        afr = ThreadRequest()
+        res_list = afr.get_urls(urls)
         # print(res_list)
         datas = []
         for rs in res_list:
@@ -204,40 +230,44 @@ class CampusDataMonitor:
             plt.title(datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S"))
             plt.xlabel('時段')
             plt.ylabel('刷卡人數')
-            plt.pause(1)
+            # plt.pause(1)
+            time.sleep(3)
             plt.clf()
 
 
 if __name__ == '__main__':
     place = '計網中心_1F自動門_進'
     cdm = CampusDataMonitor()
-    cdm.get_date_data(place)
-
-    rdata = cdm.get_relative_date_data(place, datetime.datetime.now(), 12)
-    g, gs, ts = cdm.divide_data_into_timegroups(rdata, datetime.date.today())
-
-    gs = gs[:-1]
-    ts = ts[:-1]
-    ts_names = []
-    for t in ts:
-        ts_names.append(t.strftime('%H:%M'))
-    # pprint.pp(list(zip(ts_names, gs)))
     # cdm.plot_animate(place)
+    # exit()
+    cdm.get_date_data(place)
+    while True:
+        rdata = cdm.get_relative_date_data(place, datetime.datetime.now(), 12)
+        g, gs, ts = cdm.divide_data_into_timegroups(rdata, datetime.date.today())
 
-    t = time.time()
-    rdata, rres_list = cdm.get_relative_date_datas_fast(list(cdm.location_names.keys()), datetime.datetime.now(), 12)
-    success = 0
-    fail = 0
-    for rres in rres_list:
-        if rres.status_code == 200:
-            success += 1
-        else:
-            fail += 1
+        gs = gs[:-1]
+        ts = ts[:-1]
+        ts_names = []
+        for t in ts:
+            ts_names.append(t.strftime('%H:%M'))
+        # pprint.pp(list(zip(ts_names, gs)))
+        # cdm.plot_animate(place)
 
-    print(f'success: {success}, failed: {fail}')
-    print(len(rdata))
-    print('time cost:', time.time() - t, '(s)')
-    rsum = []
-    for rd in rdata:
-        rsum.append(len(rd))
-    pprint.pprint(list(zip(list(cdm.location_names.keys()), rsum)))
+        t = time.time()
+        rdata, rres_list = cdm.get_relative_date_datas_fast(list(cdm.location_names.keys()), datetime.datetime.now(),
+                                                            12)
+        success = 0
+        fail = 0
+        for rres in rres_list:
+            if rres.status_code == 200:
+                success += 1
+            else:
+                fail += 1
+
+        print(f'success: {success}, failed: {fail}')
+        print(len(rdata))
+        print('time cost:', time.time() - t, '(s)')
+        rsum = []
+        for rd in rdata:
+            rsum.append(len(rd))
+        # pprint.pprint(list(zip(list(cdm.location_names.keys()), rsum)))
