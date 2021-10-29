@@ -57,7 +57,7 @@ class CampusDataMonitor:
     """
 
     url_template = None
-    location_names = {}  # location: group
+    location_names = {}  # location: group, 門機名稱：管制區域
 
     def __init__(self, url_path='./config/ncku_api_url.txt',
                  location_names_path='./config/ogwebbasesetting_ogattlistctrl_ascx_211021.csv'):
@@ -103,26 +103,20 @@ class CampusDataMonitor:
         start_date = end_date - datetime.timedelta(hours=hours)
         data = self.get_date_data(place_name, start_date, end_date)
 
-        # # for debugging
-        # url_config = {
-        #     'place': place_name,
-        #     'startdate': start_date.strftime('%Y-%m-%d %H:%M:%S'),
-        #     'enddate': end_date.strftime('%Y-%m-%d %H:%M:%S')
-        # }
-        # with open(f"./data/delta_{url_config['place']}_{url_config['startdate']}_{url_config['enddate']}.json".replace(
-        #         ':', '-'), 'w') as fw:
-        #     json.dump(data, fw, indent=4)
-
         return data
 
     def get_date_datas_fast(self, place_names, start_date=datetime.date.today(), end_date=datetime.date.today()):
-        # url_config = {
-        #     # 'place': place_name,
-        #     'startdate': start_date.strftime('%Y-%m-%d %H:%M:%S'),
-        #     'enddate': end_date.strftime('%Y-%m-%d %H:%M:%S')
-        # }
+        """
+            place_name: 門機
+            start_date: 開始時間，預設今日00:00
+            end_date: 結束時間 ，預設今日00:00(需調整)
+
+            return
+            datas = 門機資料的list [門機1, 門機2,...]
+            response_list = response的list (檢查連線狀況)
+        """
         urls = []
-        res_list = []
+        response_list = []
         for place_name in place_names:
             url_config = {
                 'place': place_name,
@@ -131,14 +125,17 @@ class CampusDataMonitor:
             }
             url = eval(f"f'{self.url_template}'", url_config)
             urls.append(url)
-            res_list.append(grequests.get(url))
+            response_list.append(grequests.get(url))
 
-        # res_list = grequests.map(res_list)
-        afr = ThreadRequest()
-        res_list = afr.get_urls(urls)
-        # print(res_list)
+        response_list = grequests.map(response_list)
+
+        # grequest 如果不能用，就用這個
+        # afr = ThreadRequest()
+        # res_list = afr.get_urls(urls)
+        ##
+
         datas = []
-        for rs in res_list:
+        for rs in response_list:
             if rs is not None:
                 data = eval(rs.content)
             else:
@@ -146,13 +143,23 @@ class CampusDataMonitor:
                 data = []
             datas.append(data)
 
-        return datas, res_list
+        return datas, response_list
 
     def get_relative_date_datas_fast(self, place_names, end_date, hours):
-        start_date = end_date - datetime.timedelta(hours=hours)
-        datas, res_list = self.get_date_datas_fast(place_names, start_date, end_date)
+        """
+            取得從end_date往前hours時間段內的門機資料
+            end_date-hours ~ end_date
+            end_date: 結束時間
+            hours: 往前小時數
 
-        return datas, res_list
+            return
+            datas = 門機資料的list [門機1, 門機2,...]
+            response_list = response的list (檢查連線狀況)
+        """
+        start_date = end_date - datetime.timedelta(hours=hours)
+        datas, response_list = self.get_date_datas_fast(place_names, start_date, end_date)
+
+        return datas, response_list
 
     @staticmethod
     def time_interval_index(times, t_time):
@@ -163,6 +170,7 @@ class CampusDataMonitor:
 
     def divide_data_into_timegroups(self, data, start_time, interval=60, end_time=None):
         """
+            把門機資料統計成以時段分割
             Divide data into timegroups by given start_time, interval, end_time
             times = [start_time, start_time+1*interval,..., start_time+n*interval]
             start_time+n*interval >= end_time
@@ -242,6 +250,7 @@ if __name__ == '__main__':
     # exit()
     cdm.get_date_data(place)
     while True:
+        # rdata = cdm.get_relative_date_data(place, datetime.datetime.now(), 12)
         rdata = cdm.get_relative_date_data(place, datetime.datetime.now(), 12)
         g, gs, ts = cdm.divide_data_into_timegroups(rdata, datetime.date.today())
 
