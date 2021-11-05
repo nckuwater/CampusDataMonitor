@@ -56,11 +56,24 @@ class Window(QDialog):
         iframe = folium.IFrame(html,width=150,height=40)
         popup = folium.Popup(iframe,show=True,max_width=200,max_height=200)
         m3 = folium.Marker(location=[22.99811369711759, 120.2184468855774],popup=popup)
+
+        html =   '''<font face="微軟正黑體"><font size="4">光復機車:</font>
+                    ''' + str(data2[4][1])
+        iframe = folium.IFrame(html,width=160,height=40)
+        popup = folium.Popup(iframe,show=True,max_width=200,max_height=200)
+        m4 = folium.Marker(location=[22.99677295694284, 120.2164651939948],popup=popup)
+        html =   '''<font face="微軟正黑體"><font size="4">光一舍:</font>
+                    ''' + str(data2[5][1])
+        iframe = folium.IFrame(html,width=150,height=40)
+        popup = folium.Popup(iframe,show=True,max_width=200,max_height=200)
+        m5 = folium.Marker(location=[22.999008047465647, 120.21451704980048],popup=popup)
+
         fmap.add_child(child=m0)
         fmap.add_child(child=m1)
         fmap.add_child(child=m2)
         fmap.add_child(child=m3)
-
+        fmap.add_child(child=m4)
+        fmap.add_child(child=m5)
 
         data2 = io.BytesIO()
         fmap.save(data2,close_file=False)
@@ -101,11 +114,22 @@ class Window(QDialog):
         iframe = folium.IFrame(html,width=150,height=40)
         popup = folium.Popup(iframe,show=True,max_width=200,max_height=200)
         m3 = folium.Marker(location=[22.99811369711759, 120.2184468855774],popup=popup)
+        html =   '''<font face="微軟正黑體"><font size="4">光復機車:</font>
+                    ''' + str(data2[4][1])
+        iframe = folium.IFrame(html,width=160,height=40)
+        popup = folium.Popup(iframe,show=True,max_width=200,max_height=200)
+        m4 = folium.Marker(location=[22.99677295694284, 120.2164651939948],popup=popup)
+        html =   '''<font face="微軟正黑體"><font size="4">光一舍:</font>
+                    ''' + str(data2[5][1])
+        iframe = folium.IFrame(html,width=150,height=40)
+        popup = folium.Popup(iframe,show=True,max_width=200,max_height=200)
+        m5 = folium.Marker(location=[22.999008047465647, 120.21451704980048],popup=popup)
         fmap.add_child(child=m0)
         fmap.add_child(child=m1)
         fmap.add_child(child=m2)
         fmap.add_child(child=m3)
-
+        fmap.add_child(child=m4)
+        fmap.add_child(child=m5)
         HeatMap(Data,min_opacity=0.4,blur=50,radius=50).add_to(fmap)
         data2 = io.BytesIO()
         fmap.save(data2,close_file=False)
@@ -121,6 +145,4 @@ if __name__=='__main__':
     w.show()
     w.showMaximized()
     sys.exit(app.exec_())
-    
-
     
