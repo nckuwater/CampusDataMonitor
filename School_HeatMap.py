@@ -21,17 +21,18 @@ import campus_data_monitor
 cdm =Take_data.CampusDataMonitor()
 cdm2 = campus_data_monitor.CampusDataMonitor()
 layout=QVBoxLayout()
+#多線程實作主程式
 class TakeData_Thread(QThread):
-    trigger=pyqtSignal(list,list)
+    trigger=pyqtSignal(list,list)#the signal type is two list
     def __int__(self):
-        # 初始化函数
+        # initialize
         super(TakeData_Thread, self).__init__()
     def run(self):
         while(True):
-            time.sleep(10)
+            time.sleep(15)
             # Take data完傳送訊號給主線程
-            data =Take_data.Take_Data_Now(cdm)
-            data2 = campus_data_monitor.Take_Data_Now(cdm2)
+            data =Take_data.Take_Data_Now(cdm)#Heat map data
+            data2 = campus_data_monitor.Take_Data_Now(cdm2)#cumulative number of people
             self.trigger.emit(data,data2)
 class Window(QDialog):
     def __init__(self):
@@ -39,14 +40,14 @@ class Window(QDialog):
         self.setWindowTitle("People_Heat_Map")
         self.resize(640, 480)
         self.setLayout(layout)
-
+        #initialize map data  *************************************************************************
         data =Take_data.Take_Data_Now(cdm)
         data2 = campus_data_monitor.Take_Data_Now(cdm2)
+        #*********************************************************************************************
+
+        #input data to folium's map pakage and set some Marker******************************************
         fmap = folium.Map(location=[22.996363580424514, 120.21903238440177], zoom_start=17)
         HeatMap(data,min_opacity=0.4,blur=50,radius=50).add_to(fmap)
-        fmap.save("test.html")
-        #folium.Marker(location=[22.99891110398634, 120.21723168980603],popup='<i>雲平大樓：<i>').add_to(fmap)
-
 
         html =   '''<font face="微軟正黑體"><font size="4">雲平大樓:</font>
                     ''' + str(data2[0][1])
@@ -88,10 +89,10 @@ class Window(QDialog):
         fmap.add_child(child=m4)
         fmap.add_child(child=m5)
 
-        data2 = io.BytesIO()
-        fmap.save(data2,close_file=False)
+        data_for_webView = io.BytesIO()
+        fmap.save(data_for_webView,close_file=False)
         webView=QtWebEngineWidgets.QWebEngineView()
-        webView.setHtml(data2.getvalue().decode())
+        webView.setHtml(data_for_webView.getvalue().decode())
         layout.addWidget(webView)
 
         #setup Thread***************************************************
@@ -101,12 +102,11 @@ class Window(QDialog):
         #****************************************************************
         QtWidgets.QApplication.processEvents()
     def Display(self,data,data2):
-        layout.takeAt(0).widget().deleteLater()
+        layout.takeAt(0).widget().deleteLater()#delete previous map
+
+        #input data to folium's map pakage and set some Marker******************************************
         fmap = folium.Map(location=[22.996363580424514, 120.21903238440177], zoom_start=17)
         HeatMap(data,min_opacity=0.4,blur=50,radius=50).add_to(fmap)
-        fmap.save("test.html")
-        #folium.Marker(location=[22.99891110398634, 120.21723168980603],popup='<i>雲平大樓：<i>').add_to(fmap)
-
 
         html =   '''<font face="微軟正黑體"><font size="4">雲平大樓:</font>
                     ''' + str(data2[0][1])
@@ -147,11 +147,11 @@ class Window(QDialog):
         fmap.add_child(child=m3)
         fmap.add_child(child=m4)
         fmap.add_child(child=m5)
-
-        data2 = io.BytesIO()
-        fmap.save(data2,close_file=False)
+        #***********************************************************************************
+        data_for_webView = io.BytesIO()
+        fmap.save(data_for_webView,close_file=False)
         webView=QtWebEngineWidgets.QWebEngineView()
-        webView.setHtml(data2.getvalue().decode())
+        webView.setHtml(data_for_webView.getvalue().decode())
         layout.addWidget(webView)
         QtWidgets.QApplication.processEvents()
         

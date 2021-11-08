@@ -142,7 +142,8 @@ def Take_Data_Now(cdm):
     #pprint.pprint(list(zip(list(cdm.location_names.keys()), rsum)))
     for i in range(len(rsum)):
         if(rsum[i]>0):
-            print(list(cdm.location_names.keys())[i],' : ',rsum[i],'\n')
+            print(list(cdm.location_names.keys())[i],' : ',rsum[i])
+    print("************************************************")
     machine_name=[]
     for i in range(len(rsum)):
         machine_name.append(list(cdm.location_names.keys())[i])
@@ -150,29 +151,34 @@ def Take_Data_Now(cdm):
     "門機名稱" : machine_name,
     "人數" : rsum
     }
-    Data_dataframe=pd.DataFrame(dic)
+    #每個'門名'都會有對應的'管制區域'
     location_names_path='./config/ogwebbasesetting_ogattlistctrl_ascx_211021.csv'
     location_lng_lat='個場所對應經緯度.xlsx'
     xlsx_data=pd.read_excel(location_lng_lat)
     csv_data=pd.read_csv(location_names_path)
-    data=pd.DataFrame(csv_data)
-    location_data=pd.DataFrame(xlsx_data)
-    Data_handled=data['管制區域'].unique()
+    data=pd.DataFrame(csv_data) # stored all '門名',total 562 '門名'
+    location_data=pd.DataFrame(xlsx_data) # store the latitude and longitude corresponding to all '管制區域'
+    Data_handled=data['管制區域'].unique() # store the unique '管制區域'
     n=[]
     result=[]
     c=0
+    #初始化 Location_dic ,用來儲存各個管制區域對應的刷卡人數
     for i in range(len(Data_handled)):
         n.append([0,0,0])
     Location_dic=dict(zip(Data_handled,n))
-    #construc a dictionary of 管制區域:[人數,經度,緯度]
+    #construc a dictionary of 管制區域:[經度,緯度,人數]************************************************************
     for i in range(len(rsum)): 
+        #rsum 對應cdm.location_names.key() == 刷卡人數對應門名
+        #list(cdm.location_names.keys())[i] == 第i個'門名'
+        #rsum == 第i個刷卡人數
+        #data 為門名對應管制區域，所以透過data來求各個門名的對應管制區域
         Location_dic[list(data[(data['門名']==list(cdm.location_names.keys())[i])]['管制區域'])[0]][2]+=rsum[i]
-        c+=rsum[i]
         Location_dic[list(data[(data['門名']==list(cdm.location_names.keys())[i])]['管制區域'])[0]][0] = float(location_data[(location_data['管制區域']==list(data[(data['門名']==list(cdm.location_names.keys())[i])]['管制區域'])[0])]['經緯度'].str.split(',').str.get(0))
         Location_dic[list(data[(data['門名']==list(cdm.location_names.keys())[i])]['管制區域'])[0]][1] = float(location_data[(location_data['管制區域']==list(data[(data['門名']==list(cdm.location_names.keys())[i])]['管制區域'])[0])]['經緯度'].str.split(',').str.get(1))
         if rsum[i]>0:
             result.append([Location_dic[list(data[(data['門名']==list(cdm.location_names.keys())[i])]['管制區域'])[0]][0],Location_dic[list(data[(data['門名']==list(cdm.location_names.keys())[i])]['管制區域'])[0]][1],rsum[i]/3])
-    return result
+    return result #reusult stored the location that have data. data type:2D-list
+    #*********************************************************************************************************
 if __name__ == '__main__':
     cdm = CampusDataMonitor()
     while True:
