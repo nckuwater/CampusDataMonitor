@@ -176,10 +176,7 @@ def Take_Data_Now(cdm):
             rsum.append(0)
         else:
             rsum.append(len(rd))
-    #pprint.pprint(list(zip(list(cdm.location_names.keys()), rsum)))
-    """for i in range(len(rsum)):
-        if(rsum[i]>0):
-            print(list(cdm.location_names.keys())[i],' : ',rsum[i],'\n')"""
+    time_cost=time.time()-t
     machine_name=[]
     for i in range(len(rsum)):
         machine_name.append(list(cdm.location_names.keys())[i])
@@ -187,26 +184,20 @@ def Take_Data_Now(cdm):
     "門機名稱" : machine_name,
     "人數" : rsum
     }
-    Data_dataframe=pd.DataFrame(dic)
     location_names_path='./config/ogwebbasesetting_ogattlistctrl_ascx_211021.csv'
-    location_lng_lat='個場所對應經緯度.xlsx'
-    xlsx_data=pd.read_excel(location_lng_lat)
     csv_data=pd.read_csv(location_names_path)
     data=pd.DataFrame(csv_data)
-    location_data=pd.DataFrame(xlsx_data)
     Data_handled=['光復校區 雲平大樓','成功校區 資訊工程系','光復校區 文學院修齊大樓','成功校區 計網中心','光復校區 機車通行','光復校區 光一舍']
     n=[]
     result=[['光復校區 雲平大樓',0],['成功校區 資訊工程系',0],['光復校區 文學院修齊大樓',0],['成功校區 計網中心',0],['光復校區 機車通行',0],['光復校區 光一舍',0]]
-    c=0
     for i in range(len(Data_handled)):
         n.append([0,0,0])
-    Location_dic=dict(zip(Data_handled,n))
     #construc a dictionary of 管制區域:[人數,經度,緯度]
     for i in range(len(rsum)):
         for j in range(len(result)):
             if(result[j][0]==list(data[(data['門名']==list(cdm.location_names.keys())[i])]['管制區域'])[0]):
                 result[j][1]+=rsum[i]
-    return result
+    return result,time_cost
 if __name__ == '__main__':
     cdm = CampusDataMonitor()
     while True:

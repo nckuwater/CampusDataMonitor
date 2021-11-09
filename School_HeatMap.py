@@ -24,15 +24,21 @@ layout=QVBoxLayout()
 #多線程實作主程式
 class TakeData_Thread(QThread):
     trigger=pyqtSignal(list,list)#the signal type is two list
+    time_cost_HeatMap=0
+    time_cost_loc=0
     def __int__(self):
         # initialize
         super(TakeData_Thread, self).__init__()
+    def receive_time_from_Init(self,time,time2):
+        #從主線程獲取初始化時取資料的時間
+        self.time_cost_HeatMap=time
+        self.time_cost_loc=time2
     def run(self):
         while(True):
-            time.sleep(15)
             # Take data完傳送訊號給主線程
-            data =Take_data.Take_Data_Now(cdm)#Heat map data
-            data2 = campus_data_monitor.Take_Data_Now(cdm2)#cumulative number of people
+            time.sleep(30-self.time_cost_HeatMap-self.time_cost_loc)
+            data ,self.time_cost_HeatMap=Take_data.Take_Data_Now(cdm)#Heat map data
+            data2,self.time_cost_loc = campus_data_monitor.Take_Data_Now(cdm2)#cumulative number of people
             self.trigger.emit(data,data2)
 class Window(QDialog):
     def __init__(self):
@@ -41,8 +47,8 @@ class Window(QDialog):
         self.resize(640, 480)
         self.setLayout(layout)
         #initialize map data  *************************************************************************
-        data =Take_data.Take_Data_Now(cdm)
-        data2 = campus_data_monitor.Take_Data_Now(cdm2)
+        data ,time_cost_HeatMap =Take_data.Take_Data_Now(cdm)
+        data2,time_cost_loc = campus_data_monitor.Take_Data_Now(cdm2)
         #*********************************************************************************************
 
         #input data to folium's map pakage and set some Marker******************************************
@@ -97,6 +103,7 @@ class Window(QDialog):
 
         #setup Thread***************************************************
         self.work=TakeData_Thread()
+        self.work.receive_time_from_Init(time_cost_HeatMap,time_cost_loc)
         self.work.start()
         self.work.trigger.connect(self.Display)
         #****************************************************************

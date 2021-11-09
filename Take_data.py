@@ -132,7 +132,8 @@ def Take_Data_Now(cdm):
 
     print(f'success: {success}, failed: {fail}')
     #print(len(rdata))
-    print('time cost:', time.time() - t, '(s)')
+    time_cost=time.time()-t
+    print('time cost:', time_cost, '(s)')
     rsum = []
     for rd in rdata:
         if rd==None:
@@ -177,7 +178,8 @@ def Take_Data_Now(cdm):
         Location_dic[list(data[(data['門名']==list(cdm.location_names.keys())[i])]['管制區域'])[0]][1] = float(location_data[(location_data['管制區域']==list(data[(data['門名']==list(cdm.location_names.keys())[i])]['管制區域'])[0])]['經緯度'].str.split(',').str.get(1))
         if rsum[i]>0:
             result.append([Location_dic[list(data[(data['門名']==list(cdm.location_names.keys())[i])]['管制區域'])[0]][0],Location_dic[list(data[(data['門名']==list(cdm.location_names.keys())[i])]['管制區域'])[0]][1],rsum[i]/3])
-    return result #reusult stored the location that have data. data type:2D-list
+    return result,time_cost#reusult stored the location that have data. data type:2D-list
+                            #time_cost stored the time of take data from api
     #*********************************************************************************************************
 if __name__ == '__main__':
     cdm = CampusDataMonitor()
