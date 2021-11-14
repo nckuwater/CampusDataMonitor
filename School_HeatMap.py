@@ -36,7 +36,12 @@ class TakeData_Thread(QThread):
     def run(self):
         while(True):
             # Take data完傳送訊號給主線程
-            time.sleep(30-self.time_cost_HeatMap-self.time_cost_loc)
+            the_time_of_take_data=self.time_cost_HeatMap+self.time_cost_loc
+            #print("time_cost:",the_time_of_take_data)
+            if(the_time_of_take_data>=20): #if the time cost more than 20,don't sleep
+                time.sleep(0)
+            else:
+                time.sleep(20-the_time_of_take_data)
             data ,self.time_cost_HeatMap=Take_data.Take_Data_Now(cdm)#Heat map data
             data2,self.time_cost_loc = campus_data_monitor.Take_Data_Now(cdm2)#cumulative number of people
             self.trigger.emit(data,data2)
@@ -92,7 +97,7 @@ class Window(QDialog):
         fmap.add_child(child=m1)
         fmap.add_child(child=m2)
         fmap.add_child(child=m3)
-        fmap.add_child(child=m4)
+        #fmap.add_child(child=m4)
         fmap.add_child(child=m5)
 
         data_for_webView = io.BytesIO()
@@ -152,7 +157,7 @@ class Window(QDialog):
         fmap.add_child(child=m1)
         fmap.add_child(child=m2)
         fmap.add_child(child=m3)
-        fmap.add_child(child=m4)
+        #fmap.add_child(child=m4)
         fmap.add_child(child=m5)
         #***********************************************************************************
         data_for_webView = io.BytesIO()
@@ -160,6 +165,7 @@ class Window(QDialog):
         webView=QtWebEngineWidgets.QWebEngineView()
         webView.setHtml(data_for_webView.getvalue().decode())
         layout.addWidget(webView)
+        print("corrent time",time.ctime(time.time()))
         QtWidgets.QApplication.processEvents()
         
 if __name__=='__main__':
